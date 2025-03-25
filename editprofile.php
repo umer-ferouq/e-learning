@@ -1,0 +1,188 @@
+<?php
+$title = "";
+include("includes/header.php");
+
+if(isset($_GET["id"]) && !empty(trim($_GET["id"]))){
+    $id = $_SESSION['id'];
+    $faculty = "";
+    // Include config file
+    include('config/config.php');
+    $role="";
+        if ($_SESSION['role'] !== 'student') {
+        
+            // Prepare a select statement
+        $sql ="SELECT `staff_id`, `staff_name`, `staff_number`, `email`, `phone`, 
+        `role`, `dept_id`, `faculty`, `gender` FROM `staff` WHERE  staff_id = ? ";
+
+        if($stmt = mysqli_prepare($conn, $sql)){
+            // Bind variables to the prepared statement as parameters
+            mysqli_stmt_bind_param($stmt, "i", $param_id);
+            
+            // Set parameters
+            $param_id = trim($_GET["id"]);
+            
+            // Attempt to execute the prepared statement
+            if(mysqli_stmt_execute($stmt)){
+                $result = mysqli_stmt_get_result($stmt);
+
+                if(mysqli_num_rows($result) == 1){
+                    /* Fetch result row as an associative array. Since the result set
+                    contains only one row, we don't need to use while loop */
+                    $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+                    // Retrieve individual field value
+                    $name = $row['staff_name'];
+                    $no = $row['staff_number'];
+                    $email = $row['email'];
+                    $phone = $row['phone'];
+                    $role = $row['role'];
+                    $gender = $row['gender'];
+                    $faculty = $row['faculty'];
+                } else{
+                    // URL doesn't contain valid id parameter. Redirect to error page
+                    header("location: error.php");
+                    exit();
+                }
+                
+            } else{
+                echo "Oops! Something went wrong. Please try again later.";
+            }
+        }
+        
+        // Close statement
+        mysqli_stmt_close($stmt);
+
+        // Close connection
+        mysqli_close($conn);
+        } elseif ($_SESSION['role'] == 'student') {
+               // Prepare a select statement
+        $sql ="SELECT `std_id`, `std_name`, `reg_number`, `std_email`, `std_phone`,
+         `gender`, `std_dept` FROM `student` WHERE std_id = ? ";
+
+        if($stmt = mysqli_prepare($conn, $sql)){
+            // Bind variables to the prepared statement as parameters
+            mysqli_stmt_bind_param($stmt, "i", $param_id);
+            
+            // Set parameters
+            $param_id = trim($_GET["id"]);
+            
+            // Attempt to execute the prepared statement
+            if(mysqli_stmt_execute($stmt)){
+                $result = mysqli_stmt_get_result($stmt);
+
+                if(mysqli_num_rows($result) == 1){
+                    /* Fetch result row as an associative array. Since the result set
+                    contains only one row, we don't need to use while loop */
+                    $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+                    
+                    // Retrieve individual field value
+                    $name = $row['std_name'];
+                    $no = $row['reg_number'];
+                    $email = $row['std_email'];
+                    $phone = $row['std_phone'];
+                    $gender = $row['gender'];
+                    $dept = $row['std_dept'];
+                } else{
+                    // URL doesn't contain valid id parameter. Redirect to error page
+                    header("location: error.php");
+                    exit();
+                }
+                
+            } else{
+                echo "Oops! Something went wrong. Please try again later.";
+            }
+        }
+        
+        // Close statement
+        mysqli_stmt_close($stmt);
+
+        // Close connection
+        mysqli_close($conn);
+        }
+
+} 
+// END OF STAFF READ
+else{
+// URL doesn't contain id parameter. Redirect to error page
+header("location: error.php");
+exit();
+}
+
+if ($_SESSION['role'] == 'Student') {
+    if(isset($_POST['save']) && isset($_POST['phone']) && isset($_POST['email'])){
+    
+        $phone = mysqli_real_escape_string($conn, $_POST['phone']);
+        $email = mysqli_real_escape_string($conn, $_POST['email']);
+        
+      
+        $sql = "UPDATE `student` SET `std_email`= '$email',`std_phone`= '$phone' WHERE std_id = $id";
+            $result = mysqli_query($conn, $sql);
+      
+              if($result) {
+                echo"<script>alert('Profile Updated successfully.');</script>";
+              } else{
+                echo"<script>alert('Failed to Update Profile.');</script>";
+              }
+      }
+}else {
+    if(isset($_POST['save']) && isset($_POST['phone']) && isset($_POST['email'])){
+    
+        $phone = mysqli_real_escape_string($conn, $_POST['phone']);
+        $email = mysqli_real_escape_string($conn, $_POST['email']);
+        
+      
+        $sql = "UPDATE `staff` SET `email`= '$email',`phone`= '$phone' WHERE staff_id = $id";
+            $result = mysqli_query($conn, $sql);
+      
+              if($result) {
+                echo"<script>alert('Profile Updated successfully.');</script>";
+              } else{
+                echo"<script>alert('Failed to Update Profile.');</script>";
+              }
+      }
+}
+?>
+
+<main class="flex-shrink-0">
+    <div class="row mt-5">
+        <div class="col-md-3 mx-auto">
+            <h3 class="mb-0 display-5 text-center fw-semibold">Edit Profile</h3>
+
+            <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" method="POST">
+                <div class="form-group mb-1">
+                    <label for="name" class="form-label mt-3">Name</label>
+                    <input type="text" class="form-control" id="name" <?php echo "value= '$name'"; ?>disabled >
+                </div>
+                <div class="form-group mb-1">
+                    <label for="reg_no" class="form-label mt-3">Reg Number</label>
+                    <input type="text" class="form-control" id="reg_no"<?php echo "value= '$no'"; ?>disabled >
+                </div>
+                <div class="form-group mb-1">
+                    <label for="email" class="form-label mt-3">Email</label>
+                    <input type="email" class="form-control" name="email" <?php echo "value= '$email'"; ?> >
+                </div>
+                <div class="form-group mb-1">
+                    <label for="phone" class="form-label mt-3">Phone</label>
+                    <input type="phone" class="form-control" name="phone" <?php echo "value= '$phone'"; ?> >
+                </div>
+                <div class="form-group mb-1">
+                    <label for="phone" class="form-label mt-3">Gender: <?php echo "$gender";?></label>
+                </div>
+                <div class="form-group mb-1">
+                    <label for="role" class="form-label mt-3">Role: <?php echo "$role"; ?></label>
+                </div>
+                <?php
+                    if ($_SESSION['role'] !== 'Student'){
+                        echo "<div class='form-group mb-1'>
+                        <label class='form-label mt-1'>Faculty</label>
+                        <input type='text' class='form-control' value='Science'"?> <?php echo "value= '$faculty' disabled"; ?> 
+                   <?php echo "</div>";
+                    }?>
+                
+                    </div>
+                <a href="editprofile.php"><button type="submit" name="save" class="btn btn-primary w-50 mt-3">Save</button></a>
+            </form>
+        </div>
+    </div>
+</main>
+
+<?php include("includes/footer.php") ?>
